@@ -1,4 +1,4 @@
-# macOS metadata
+﻿# macOS metadata
 .DS_Store
 ._.DS_Store
 ._*
@@ -9,3 +9,4 @@ images_backup/
 # Editor
 .vscode/
 *.swp
+node_modules/
