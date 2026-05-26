@@ -1,0 +1,11 @@
+# macOS metadata
+.DS_Store
+._.DS_Store
+._*
+
+# Backup folders
+images_backup/
+
+# Editor
+.vscode/
+*.swp
