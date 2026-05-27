@@ -161,10 +161,45 @@ function applyOrientation(img) {
   requestAnimationFrame(() => spanItem(item));
 }
 
-document.querySelectorAll('.gallery-item img').forEach(img => {
-  img.complete && img.naturalWidth
-    ? applyOrientation(img)
-    : img.addEventListener('load', () => applyOrientation(img), { once: true });
+// ── Lazy image loading (Intersection Observer) ──
+function loadImage(img) {
+  const src = img.dataset.src;
+  if (!src) return;   // 이미 로드됐거나 src 없음
+
+  const item = img.closest('.gallery-item');
+
+  img.addEventListener('load', () => {
+    img.classList.add('img-loaded');        // fade-in 트리거
+    item?.classList.remove('img-loading'); // shimmer 제거
+    applyOrientation(img);                 // 방향 감지 + masonry 재계산
+  }, { once: true });
+
+  img.addEventListener('error', () => {
+    item?.classList.remove('img-loading');
+  }, { once: true });
+
+  img.src = src;
+  img.removeAttribute('data-src');
+}
+
+// IO 인스턴스: 필터 변경 후에도 재사용
+const imgObserver = ('IntersectionObserver' in window)
+  ? new IntersectionObserver((entries, observer) => {
+      entries.forEach(entry => {
+        if (!entry.isIntersecting) return;
+        loadImage(entry.target);
+        observer.unobserve(entry.target);
+      });
+    }, {
+      rootMargin: '0px 0px 400px 0px',   // 뷰포트 400px 아래부터 미리 로드
+      threshold: 0,
+    })
+  : null;
+
+// 초기: 모든 lazy 이미지를 shimmer 상태로 설정 후 IO 등록
+document.querySelectorAll('.gallery-item img.img-lazy').forEach(img => {
+  img.closest('.gallery-item')?.classList.add('img-loading');
+  imgObserver ? imgObserver.observe(img) : loadImage(img);
 });
 
 let _rt;
@@ -193,6 +228,12 @@ filterBtns.forEach(btn => {
       if (match) {
         item.classList.remove('hidden', 'fade-out');
         setTimeout(() => item.classList.add('fade-in'), i * 20);
+
+        // hidden 해제된 아이템 중 아직 미로드 이미지 → IO 재등록
+        const lazyImg = item.querySelector('img[data-src]');
+        if (lazyImg) {
+          imgObserver ? imgObserver.observe(lazyImg) : loadImage(lazyImg);
+        }
       } else {
         item.classList.remove('fade-in');
         item.classList.add('fade-out');
@@ -285,13 +326,15 @@ function renderLightbox() {
   lbPrev.hidden = lbIndex === 0;
   lbNext.hidden = lbIndex === lbPool.length - 1;
 
+  // img.src: 이미 로드된 경우 / img.dataset.src: 아직 lazy-load 전인 경우
+  const imgSrc = img.src || img.dataset.src || '';
   const tmp = new Image();
   tmp.onload = () => {
     lbImg.src = tmp.src;
     lbImg.alt = img.alt;
     lbImg.classList.add('loaded');
   };
-  tmp.src = img.src;
+  tmp.src = imgSrc;
 }
 
 function stepLightbox(dir) {
