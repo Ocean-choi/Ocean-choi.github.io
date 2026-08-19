@@ -268,10 +268,10 @@ ul { list-style: none; }
 /* Profile photo */
 .about-photo {
   width: 100%;
-  aspect-ratio: 3 / 4;
+  aspect-ratio: 5 / 4;
   overflow: hidden;
   background: #131313;
-  margin-bottom: 40px;
+  margin-bottom: 24px;
 }
 .about-photo img {
   width: 100%;
